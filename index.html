@@ -184,8 +184,15 @@
     justify-content: center;
 
     background:
-        linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.45)),
-        url("OpeningPhoto (2).png") center center / cover no-repeat;
+        linear-gradient(
+            rgba(0,0,0,.35),
+            rgba(0,0,0,.45)
+        ),
+        url("OpeningPhoto (2).png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 
     transition: opacity 1s ease, visibility 1s ease;
     padding: 24px;
