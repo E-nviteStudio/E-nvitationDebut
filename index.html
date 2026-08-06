@@ -174,18 +174,22 @@
                 /* =====================================================
              ENVELOPE INTRO — the signature moment
           ===================================================== */
-                #envelope-overlay {
-                    position: fixed;
-                    inset: 0;
-                    z-index: 200;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    background: linear-gradient(180deg, rgba(30,6,12,0.72), rgba(74,21,36,0.6) 45%, rgba(30,6,12,0.8)), url("introenvelope.png");
-                    transition: opacity 1s ease, visibility 1s ease;
-                    padding: 24px;
-                }
+#envelope-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.45)),
+        url("OpeningPhoto (2).png") center center / cover no-repeat;
+
+    transition: opacity 1s ease, visibility 1s ease;
+    padding: 24px;
+}
 
                     #envelope-overlay.hide {
                         opacity: 0;
