@@ -737,55 +737,121 @@
                 }
 
                 /* =====================================================
-             DEBUTANTE
+             DEBUTANTE — three-panel triptych
           ===================================================== */
-                .debutante-grid {
-                    display: grid;
-                    grid-template-columns: 0.85fr 1.15fr;
-                    gap: 64px;
-                    align-items: center;
+                .debutante-intro {
+                    max-width: 640px;
+                    margin: 0 auto 68px;
+                    text-align: center;
                 }
 
-                .frame {
-                    aspect-ratio: 4/5;
-                    border: 1px solid var(--gold);
-                    outline: 1px solid var(--rose);
-                    outline-offset: 10px;
-                    background: linear-gradient(160deg, var(--blush), var(--rose) 130%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    .debutante-intro blockquote {
+                        font-family: var(--f-display);
+                        font-style: italic;
+                        font-size: clamp(22px,2.8vw,30px);
+                        color: var(--wine);
+                        margin: 0;
+                        line-height: 1.5;
+                    }
+
+                    .debutante-intro blockquote::before,
+                    .debutante-intro blockquote::after {
+                        content: "";
+                        display: block;
+                        width: 40px;
+                        height: 1px;
+                        background: var(--gold);
+                        margin: 0 auto 20px;
+                    }
+
+                    .debutante-intro blockquote::after {
+                        margin: 20px auto 0;
+                    }
+
+                .triptych {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: clamp(20px, 3vw, 36px);
+                    align-items: start;
+                }
+
+                .triptych-panel {
+                    margin: 0;
                     position: relative;
                 }
 
-                    .frame .frame-mark {
-                        font-family: var(--f-script);
-                        font-size: 88px;
-                        color: rgba(255,255,255,0.75);
+                    .triptych-panel .frame {
+                        aspect-ratio: 3/4;
+                        border: 1px solid var(--gold);
+                        outline: 1px solid var(--rose);
+                        outline-offset: 8px;
+                        background: linear-gradient(160deg, var(--blush), var(--rose) 130%);
+                        overflow: hidden;
+                        position: relative;
                     }
 
-                    .frame .frame-caption {
+                        .triptych-panel .frame img {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                            object-position: center 22%;
+                            transform: scale(1.02);
+                            transition: transform 0.9s cubic-bezier(.2,.7,.3,1), filter 0.6s ease;
+                            filter: saturate(0.96) sepia(0.05);
+                        }
+
+                        .triptych-panel:hover .frame img {
+                            transform: scale(1.08);
+                        }
+
+                        .triptych-panel .frame::after {
+                            content: "";
+                            position: absolute;
+                            inset: 0;
+                            background: linear-gradient(180deg, rgba(74,21,36,0) 55%, rgba(74,21,36,0.5) 100%);
+                            pointer-events: none;
+                        }
+
+                    .triptych-panel figcaption {
                         position: absolute;
-                        bottom: 22px;
                         left: 0;
                         right: 0;
+                        bottom: 18px;
                         text-align: center;
-                        font-family: var(--f-utility);
-                        font-size: 11px;
-                        letter-spacing: 0.24em;
-                        text-transform: uppercase;
-                        color: rgba(255,255,255,0.85);
+                        z-index: 2;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 2px;
                     }
 
-                .debutante-copy blockquote {
-                    font-family: var(--f-display);
-                    font-style: italic;
-                    font-size: clamp(22px,2.6vw,28px);
-                    color: var(--wine);
-                    margin: 0 0 24px;
-                    line-height: 1.5;
-                    border-left: 2px solid var(--gold);
-                    padding-left: 24px;
+                        .triptych-panel figcaption .cap-num {
+                            font-family: var(--f-utility);
+                            font-size: 10.5px;
+                            letter-spacing: 0.3em;
+                            text-transform: uppercase;
+                            color: var(--gold-light);
+                        }
+
+                        .triptych-panel figcaption .cap-text {
+                            font-family: var(--f-script);
+                            font-size: 26px;
+                            color: #fff;
+                        }
+
+                    /* Center panel rises slightly for a dynamic, editorial rhythm */
+                    .triptych-panel.panel-2 {
+                        margin-top: -34px;
+                    }
+
+                        .triptych-panel.panel-2 .frame {
+                            aspect-ratio: 3/4.35;
+                        }
+
+                .debutante-copy {
+                    max-width: 680px;
+                    margin: 68px auto 0;
+                    text-align: center;
                 }
 
                 .debutante-copy p {
@@ -801,15 +867,21 @@
                 }
 
                 @media (max-width:760px) {
-                    .debutante-grid {
+                    .triptych {
                         grid-template-columns: 1fr;
-                        gap: 40px;
+                        max-width: 340px;
+                        margin: 0 auto;
+                        gap: 30px;
                     }
 
-                    .frame {
-                        max-width: 320px;
-                        margin: 0 auto;
+                    .triptych-panel.panel-2 {
+                        margin-top: 0;
+                        order: -1;
                     }
+
+                        .triptych-panel.panel-2 .frame {
+                            aspect-ratio: 3/4;
+                        }
                 }
 
                 /* =====================================================
@@ -1368,7 +1440,7 @@
     <header class="site-nav" id="site-nav">
         <a href="#home" class="brand">
             <span class="monogram" id="nav-monogram">I</span>
-            <span id="nav-name">Aubrey @ 18</span>
+            <span id="nav-name">Aubrey's Debut</span>
         </a>
         <button class="burger" id="burger-btn" aria-label="Open menu" aria-expanded="false" aria-controls="menu-panel">
             <span></span><span></span><span></span>
@@ -1441,17 +1513,39 @@
 
     <!-- ================= DEBUTANTE ================= -->
     <section class="section" id="debutante">
-        <div class="debutante-grid reveal">
-            <div class="frame">
-                <span class="frame-mark script" id="frame-initial">A</span>
-                <span class="frame-caption">Portrait · place your photo here</span>
-            </div>
-            <div class="debutante-copy">
-                <div class="eyebrow">The Debutante</div>
-                <blockquote>"A celebration of eighteen beautiful years, surrounded by love, laughter, and the people closest to my heart."</blockquote>
-                <p>From a little girl who loved dress-up and daydreams, to a young woman ready to step into her own story — this night is a thank-you to everyone who helped write the chapters so far. I would be so honoured to have you beside me as I turn a page into something new.</p>
-                <div class="signoff">— with love, Aubrey</div>
-            </div>
+        <div class="section-head reveal">
+            <div class="eyebrow">The Debutante</div>
+            <h2>Eighteen Years, Three Chapters</h2>
+        </div>
+
+        <div class="debutante-intro reveal">
+            <blockquote>"From the girl who once twirled in her mother's shoes, to the woman stepping into her own — every chapter has led me here, to this night, with all of you."</blockquote>
+        </div>
+
+        <div class="triptych reveal">
+            <figure class="triptych-panel panel-1">
+                <div class="frame">
+                    <img src="3panel1.jpg" alt="Aubrey as a little girl">
+                    <figcaption><span class="cap-num">Chapter I</span><span class="cap-text">The Beginning</span></figcaption>
+                </div>
+            </figure>
+            <figure class="triptych-panel panel-2">
+                <div class="frame">
+                    <img src="3panel2.jpg" alt="Aubrey today, at eighteen">
+                    <figcaption><span class="cap-num">Chapter II</span><span class="cap-text">Eighteen</span></figcaption>
+                </div>
+            </figure>
+            <figure class="triptych-panel panel-3">
+                <div class="frame">
+                    <img src="3panel3.jpg" alt="Aubrey looking ahead to the future">
+                    <figcaption><span class="cap-num">Chapter III</span><span class="cap-text">What's Ahead</span></figcaption>
+                </div>
+            </figure>
+        </div>
+
+        <div class="debutante-copy reveal">
+            <p>This night is a thank-you to everyone who helped write the chapters so far — the ones who cheered from the sidelines, held my hand through the hard parts, and celebrated every small win along the way. I would be so honoured to have you beside me as I turn the page into something new.</p>
+            <div class="signoff">— with love, Aubrey</div>
         </div>
     </section>
 
@@ -1613,7 +1707,7 @@
          ============================================================ -->
     <script id="debut-config">
         const DEBUT = {
-            name: "Aubrey Banaag",
+            name: "Aubrey",
             fullName: "Aubrey L. Banaag",
             nickname: "Aubrey",
             initial: "A",
@@ -1634,7 +1728,6 @@
         document.getElementById("hero-name").textContent = DEBUT.name;
         document.getElementById("hero-sub").textContent = DEBUT.heroSub;
         document.getElementById("hero-date-pill").textContent = DEBUT.displayDate + " · " + DEBUT.displayTime;
-        document.getElementById("frame-initial").textContent = DEBUT.initial;
         document.getElementById("detail-date").textContent = DEBUT.displayDate;
         document.getElementById("detail-time").textContent = DEBUT.displayTime;
         document.getElementById("detail-venue").textContent = DEBUT.venue;
