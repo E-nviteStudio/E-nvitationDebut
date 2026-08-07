@@ -1658,6 +1658,20 @@
                     text-align: center;
                 }
 
+                .booth-render-status {
+                    margin: 14px 0 0;
+                    font-family: var(--f-utility);
+                    font-size: 13px;
+                    letter-spacing: 0.08em;
+                    color: var(--rose-deep);
+                    text-align: center;
+                }
+
+                .booth-cta.is-loading {
+                    opacity: 0.55;
+                    pointer-events: none;
+                }
+
                 @media (max-width:420px) {
                     .layout-options {
                         grid-template-columns: 1fr;
@@ -2451,11 +2465,12 @@
                 <div class="booth-step" data-step="result" id="booth-step-result" hidden>
                     <div class="booth-step-label" style="text-align:center;">Your Keepsake</div>
                     <canvas id="strip-canvas"></canvas>
+                    <p class="booth-render-status" id="booth-render-status" hidden>Developing your photo…</p>
                     <div class="camera-actions">
                         <a class="booth-cta" id="download-strip-btn" download="aubrey-debut-photobooth.png" href="#">Save My Strip</a>
                         <button type="button" class="booth-ghost" id="retake-btn">Take Another</button>
                     </div>
-                    <p class="booth-save-hint" id="booth-save-hint">Tap "Save My Strip" — on phones this opens your share sheet so you can save straight to Photos. If nothing happens, press and hold the image above and choose "Save Image."</p>
+                    <p class="booth-save-hint" id="booth-save-hint">Tap "Save My Strip" to download it straight away — on phones this may also offer to save directly to Photos. If nothing happens, press and hold the image above and choose "Save Image."</p>
                 </div>
             </div>
 
@@ -2839,6 +2854,7 @@
     const stripCanvas     = document.getElementById('strip-canvas');
     const downloadBtn     = document.getElementById('download-strip-btn');
     const saveHintEl      = document.getElementById('booth-save-hint');
+    const renderStatusEl  = document.getElementById('booth-render-status');
 
     let selectedLayout = 'strip3';
     let selectedTimer = 5;
@@ -2982,8 +2998,11 @@
       }
 
       stopCamera();
-      await renderResult();
+      // Switch to the result step right away — the canvas/button live
+      // here regardless of how the render below turns out, so the
+      // guest always sees *something* immediately after the last shot.
       goToStep('result');
+      await renderResult();
     }
 
     startCaptureBtn.addEventListener('click', () => { runCaptureSequence(); });
@@ -3014,8 +3033,8 @@
       }
       try {
         capturedShots = await Promise.all(files.map(loadImageFile));
-        await renderResult();
         goToStep('result');
+        await renderResult();
       } catch(err){
         console.error('Photobooth upload error:', err);
         alert("Something went wrong reading those photos — please try again.");
@@ -3063,27 +3082,17 @@
       });
     }
 
-    async function renderResult(){
-      const cfg = BOOTH_LAYOUTS[selectedLayout];
-      stripCanvas.width = cfg.canvasW;
-      stripCanvas.height = cfg.canvasH;
-      const ctx = stripCanvas.getContext('2d');
-
-      await Promise.all([
-        document.fonts.load(`400 ${Math.round(cfg.canvasW * 0.09)}px Parisienne`),
-        document.fonts.load('italic 600 34px "Playfair Display"'),
-        document.fonts.load(`500 ${Math.round(cfg.canvasW * 0.026)}px Jost`)
-      ]);
-      const charm = await loadCharmImage();
-
-      // background + outer frame
+    // Draws just the photo slots — no web fonts, no external portrait
+    // image, nothing that can fail or taint the canvas. This always
+    // succeeds because every source is either a live camera frame or a
+    // locally-selected file, both of which are canvas-safe.
+    function drawPhotoSlots(ctx, cfg){
       ctx.fillStyle = '#FFFBF8';
       ctx.fillRect(0, 0, cfg.canvasW, cfg.canvasH);
       ctx.strokeStyle = '#C8A15C';
       ctx.lineWidth = 3;
       ctx.strokeRect(9, 9, cfg.canvasW - 18, cfg.canvasH - 18);
 
-      // photo slots, stacked top to bottom with a hairline rose border
       const slotAreaH = cfg.canvasH - cfg.pad - cfg.footerH;
       const slotW = cfg.canvasW - cfg.pad * 2;
       const slotH = (slotAreaH - cfg.gap * (cfg.shots - 1)) / cfg.shots;
@@ -3096,9 +3105,20 @@
         ctx.lineWidth = 2;
         ctx.strokeRect(slotX, slotY, slotW, slotH);
       });
+    }
 
-      // footer — divider, "See You There" script line, date/hashtag,
-      // and a circular portrait charm from the debutante's own photo
+    // Draws the footer text + circular portrait charm. This is the
+    // "nice to have" layer: web-font loading or the local charm image
+    // could, in unusual hosting setups, fail to load or make the canvas
+    // un-exportable. It's kept separate so a failure here can be caught
+    // and skipped without losing the guest's actual photos.
+    async function drawFooterFlourish(ctx, cfg, useCharm){
+      await Promise.all([
+        document.fonts.load(`400 ${Math.round(cfg.canvasW * 0.09)}px Parisienne`).catch(() => {}),
+        document.fonts.load('italic 600 34px "Playfair Display"').catch(() => {}),
+        document.fonts.load(`500 ${Math.round(cfg.canvasW * 0.026)}px Jost`).catch(() => {})
+      ]);
+
       const footerTop = cfg.canvasH - cfg.footerH;
       const centerX = cfg.canvasW / 2;
 
@@ -3124,89 +3144,148 @@
       ctx.font = `500 ${smallSize}px Jost`;
       ctx.fillText(`${DEBUT.hashtag.toUpperCase()}  \u00B7  ${DEBUT.displayDate.toUpperCase()}`, centerX, footerTop + cfg.footerH * 0.58);
 
-      if(charm){
-        const r = cfg.canvasW * 0.052;
-        const cy = footerTop + cfg.footerH * 0.80;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(centerX, cy, r, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        drawImageCover(ctx, charm, centerX - r, cy - r, r * 2, r * 2);
-        ctx.restore();
-        ctx.beginPath();
-        ctx.arc(centerX, cy, r, 0, Math.PI * 2);
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#C8A15C';
-        ctx.stroke();
+      if(useCharm){
+        const charm = await loadCharmImage();
+        if(charm){
+          const r = cfg.canvasW * 0.052;
+          const cy = footerTop + cfg.footerH * 0.80;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(centerX, cy, r, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          drawImageCover(ctx, charm, centerX - r, cy - r, r * 2, r * 2);
+          ctx.restore();
+          ctx.beginPath();
+          ctx.arc(centerX, cy, r, 0, Math.PI * 2);
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#C8A15C';
+          ctx.stroke();
+        }
       }
+    }
 
-      // ---- Build the shareable/downloadable file from a real Blob ----
-      // (canvas.toDataURL + <a download> is unreliable on iOS Safari;
-      // a Blob + Object URL, with a Web Share fallback below, works
-      // consistently across desktop and mobile.)
+    function setDownloadReady(blob, cfg){
       const stamp = new Date().toISOString().slice(0, 10);
       currentFilename = `aubrey-debut-${cfg.label.toLowerCase().replace(/\s+/g, '-')}-${stamp}.png`;
 
-      const blob = await canvasToBlob(stripCanvas);
       revokeCurrentBlobUrl();
       currentBlob = blob;
 
       if(blob){
         currentBlobUrl = URL.createObjectURL(blob);
         downloadBtn.href = currentBlobUrl;
+        downloadBtn.setAttribute('download', currentFilename);
+        downloadBtn.classList.remove('is-loading');
+        if(saveHintEl) saveHintEl.textContent = 'Tap "Save My Strip" to download it now — on phones this may also offer to save straight to Photos.';
       } else {
-        // Extremely old browsers without canvas.toBlob support — fall
-        // back to a data URL so the link still does something useful.
-        currentBlobUrl = null;
-        downloadBtn.href = stripCanvas.toDataURL('image/png');
+        // Last-resort fallback: a data URL, which works even without
+        // canvas.toBlob support in very old browsers.
+        try {
+          downloadBtn.href = stripCanvas.toDataURL('image/png');
+          downloadBtn.setAttribute('download', currentFilename);
+        } catch(err){
+          downloadBtn.removeAttribute('href');
+        }
+        downloadBtn.classList.remove('is-loading');
+        if(saveHintEl) saveHintEl.textContent = 'If "Save My Strip" doesn\u2019t work, press and hold the image above and choose "Save Image."';
       }
-      downloadBtn.setAttribute('download', currentFilename);
     }
 
-    // ---- Save / share handler: Web Share first, blob download fallback ----
-    downloadBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if(!currentBlob){
-        return; // nothing rendered yet
-      }
+    async function renderResult(){
+      const cfg = BOOTH_LAYOUTS[selectedLayout];
+      stripCanvas.width = cfg.canvasW;
+      stripCanvas.height = cfg.canvasH;
+      const ctx = stripCanvas.getContext('2d');
 
-      const file = (typeof File !== 'undefined')
-        ? new File([currentBlob], currentFilename, { type: 'image/png' })
-        : null;
+      downloadBtn.classList.add('is-loading');
+      if(renderStatusEl) renderStatusEl.hidden = false;
 
-      // Prefer the native share sheet when the platform supports sharing
-      // files — this is what lets iOS/Android guests save straight to
-      // their Photos app in one tap.
-      if(file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+      // Step 1 — the photos themselves. This never throws, so the
+      // guest's shots are guaranteed to appear on the canvas.
+      drawPhotoSlots(ctx, cfg);
+
+      // Step 2 — the decorative footer (fonts + charm portrait). If
+      // this errors for any reason (e.g. the page being opened from a
+      // context where the local image can't be read back out of the
+      // canvas), we simply skip it rather than losing the photo.
+      try {
+        await drawFooterFlourish(ctx, cfg, true);
+      } catch(err){
+        console.warn('Photobooth: footer flourish failed, retrying without the portrait charm:', err);
+        drawPhotoSlots(ctx, cfg); // redraw clean, since a failed clip/draw can leave the canvas mid-state
         try {
-          await navigator.share({
-            files: [file],
-            title: DEBUT.fullName + "'s Debut Photobooth",
-            text: 'A keepsake from ' + DEBUT.fullName + "'s 18th birthday celebration."
-          });
-          return;
-        } catch(err){
-          if(err && err.name === 'AbortError'){
-            // Guest cancelled the share sheet — respect that, don't
-            // also force a download on top of it.
-            return;
-          }
-          // Any other share failure: fall through to a direct download.
+          await drawFooterFlourish(ctx, cfg, false);
+        } catch(err2){
+          console.warn('Photobooth: footer text also failed, keeping photos only:', err2);
+          drawPhotoSlots(ctx, cfg);
         }
       }
 
-      // Fallback for browsers without file-sharing support (most
-      // desktop browsers): trigger a normal blob-URL download.
-      if(currentBlobUrl){
+      // Step 3 — export. Try a Blob first; if the canvas somehow ended
+      // up tainted, fall back to a bare photos-only render so a
+      // download is still possible.
+      let blob = null;
+      try {
+        blob = await canvasToBlob(stripCanvas);
+        if(!blob) throw new Error('canvas.toBlob returned null');
+      } catch(err){
+        console.warn('Photobooth: export failed, redrawing photos only and retrying:', err);
+        try {
+          drawPhotoSlots(ctx, cfg);
+          blob = await canvasToBlob(stripCanvas);
+        } catch(err2){
+          console.error('Photobooth: export still failing:', err2);
+        }
+      }
+
+      if(renderStatusEl) renderStatusEl.hidden = true;
+      setDownloadReady(blob, cfg);
+    }
+
+    // ---- Save handler ----
+    // Primary path: a plain blob-URL download via the anchor's native
+    // `download` attribute — this is the simplest, most broadly
+    // supported way to save a file and needs no permissions or extra
+    // taps. Where the platform also supports sharing files (most
+    // phones), we additionally offer the native share sheet so a guest
+    // can save straight into Photos if they prefer.
+    downloadBtn.addEventListener('click', async (e) => {
+      if(downloadBtn.classList.contains('is-loading') || !currentBlobUrl){
+        e.preventDefault();
+        return;
+      }
+
+      const supportsFileShare = (typeof File !== 'undefined')
+        && navigator.canShare
+        && navigator.share
+        && navigator.canShare({ files: [new File([currentBlob], currentFilename, { type: 'image/png' })] });
+
+      if(!supportsFileShare){
+        // Let the browser's native download happen — no need to
+        // intercept anything on desktop or most Android browsers.
+        return;
+      }
+
+      // On share-capable devices, offer the share sheet instead of the
+      // plain download, since that's the more familiar "save to
+      // Photos" flow on iOS/Android.
+      e.preventDefault();
+      try {
+        await navigator.share({
+          files: [new File([currentBlob], currentFilename, { type: 'image/png' })],
+          title: DEBUT.fullName + "'s Debut Photobooth",
+          text: 'A keepsake from ' + DEBUT.fullName + "'s 18th birthday celebration."
+        });
+      } catch(err){
+        if(err && err.name === 'AbortError') return; // guest cancelled, respect that
+        // Any other failure: fall back to a direct blob download.
         const a = document.createElement('a');
         a.href = currentBlobUrl;
         a.download = currentFilename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      } else if(saveHintEl){
-        saveHintEl.textContent = "Press and hold the image above and choose \u201cSave Image\u201d to keep your photo.";
       }
     });
   })();
