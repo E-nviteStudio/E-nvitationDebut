@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aubrey L. Banaag — 18th Birthday Invitation</title>
+    <title>A Decade & Eight w/ Aubrey</title>
     <meta name="description" content="You are cordially invited to celebrate a milestone eighteenth birthday.">
 
     <!-- ============================================================
@@ -1331,6 +1331,336 @@
                 }
 
                 /* =====================================================
+             DIY PHOTOBOOTH — interactive app
+             A self-contained widget: guests pick a strip layout and a
+             timer, grant camera access (or upload photos instead),
+             then a canvas composites the final strip/polaroid, styled
+             with the same wine/rose/gold tokens as the rest of the
+             page. Everything below reads/writes only within
+             #booth-app, so it can't collide with other sections.
+          ===================================================== */
+                .booth-app {
+                    max-width: 460px;
+                    margin: 56px auto 0;
+                    background: var(--cream);
+                    border: 1px solid var(--gold);
+                    outline: 1px solid var(--rose);
+                    outline-offset: 8px;
+                    padding: clamp(26px,4vw,40px);
+                    position: relative;
+                }
+
+                .booth-step {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+
+                    .booth-step[hidden] {
+                        display: none;
+                    }
+
+                .booth-step-label {
+                    font-family: var(--f-utility);
+                    font-size: 11px;
+                    letter-spacing: 0.24em;
+                    text-transform: uppercase;
+                    color: var(--rose-deep);
+                    margin: 0 0 16px;
+                    width: 100%;
+                    text-align: left;
+                }
+
+                    .booth-step-label:not(:first-child) {
+                        margin-top: 28px;
+                    }
+
+                .layout-options {
+                    display: grid;
+                    grid-template-columns: repeat(3,1fr);
+                    gap: 10px;
+                    width: 100%;
+                }
+
+                .layout-opt {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 14px 8px 16px;
+                    background: var(--blush-light);
+                    border: 1px solid rgba(109,35,51,0.16);
+                    cursor: pointer;
+                    font-family: var(--f-utility);
+                    color: var(--ink-soft);
+                    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+                }
+
+                    .layout-opt:hover {
+                        transform: translateY(-2px);
+                        border-color: var(--rose);
+                    }
+
+                    .layout-opt.active {
+                        background: var(--blush);
+                        border-color: var(--wine);
+                        box-shadow: 0 6px 16px -6px rgba(109,35,51,0.4);
+                    }
+
+                    .layout-opt .opt-preview {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 3px;
+                        padding: 5px;
+                        background: var(--cream);
+                        border: 1px solid var(--gold);
+                    }
+
+                    .layout-opt .opt-frame {
+                        width: 34px;
+                        height: 11px;
+                        background: linear-gradient(160deg, var(--rose), var(--rose-deep));
+                    }
+
+                    .layout-opt[data-layout="polaroid"] .opt-preview {
+                        padding: 4px 4px 9px;
+                    }
+
+                    .layout-opt[data-layout="polaroid"] .opt-frame {
+                        height: 30px;
+                    }
+
+                    .layout-opt .opt-name {
+                        font-size: 12px;
+                        letter-spacing: 0.03em;
+                        color: var(--wine);
+                        font-weight: 600;
+                    }
+
+                    .layout-opt .opt-sub {
+                        font-size: 10.5px;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        color: var(--ink-soft);
+                        opacity: 0.8;
+                    }
+
+                .timer-options {
+                    display: grid;
+                    grid-template-columns: repeat(3,1fr);
+                    gap: 10px;
+                    width: 100%;
+                }
+
+                .timer-opt {
+                    padding: 12px 8px;
+                    background: var(--blush-light);
+                    border: 1px solid rgba(109,35,51,0.16);
+                    font-family: var(--f-display);
+                    font-style: italic;
+                    font-size: 18px;
+                    color: var(--wine);
+                    cursor: pointer;
+                    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+                }
+
+                    .timer-opt:hover {
+                        transform: translateY(-2px);
+                        border-color: var(--rose);
+                    }
+
+                    .timer-opt.active {
+                        background: var(--wine);
+                        border-color: var(--wine);
+                        color: var(--cream);
+                    }
+
+                .booth-cta {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    margin-top: 30px;
+                    padding: 15px 24px;
+                    border: 1px solid var(--wine);
+                    background: var(--wine);
+                    color: var(--cream);
+                    font-family: var(--f-utility);
+                    font-size: 12.5px;
+                    letter-spacing: 0.18em;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+                    text-decoration: none;
+                }
+
+                    .booth-cta:hover {
+                        background: transparent;
+                        color: var(--wine);
+                    }
+
+                    .booth-cta:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+
+                .booth-ghost {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    margin-top: 10px;
+                    padding: 13px 24px;
+                    border: 1px solid rgba(109,35,51,0.28);
+                    background: transparent;
+                    color: var(--ink-soft);
+                    font-family: var(--f-utility);
+                    font-size: 12px;
+                    letter-spacing: 0.16em;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    transition: border-color 0.3s ease, color 0.3s ease;
+                }
+
+                    .booth-ghost:hover {
+                        border-color: var(--wine);
+                        color: var(--wine);
+                    }
+
+                .booth-link {
+                    margin-top: 16px;
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    font-family: var(--f-body);
+                    font-style: italic;
+                    font-size: 15.5px;
+                    color: var(--rose-deep);
+                    text-decoration: underline;
+                    text-underline-offset: 3px;
+                    cursor: pointer;
+                }
+
+                    .booth-link:hover {
+                        color: var(--wine);
+                    }
+
+                .camera-frame {
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 3/4;
+                    background: var(--wine-deep);
+                    overflow: hidden;
+                    border: 1px solid var(--gold);
+                }
+
+                    .camera-frame video {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        transform: scaleX(-1);
+                    }
+
+                .camera-flash {
+                    position: absolute;
+                    inset: 0;
+                    background: #fff;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+
+                    .camera-flash.fire {
+                        animation: booth-flash 0.45s ease-out;
+                    }
+
+                @keyframes booth-flash {
+                    0% { opacity: 0.95; }
+                    100% { opacity: 0; }
+                }
+
+                .camera-countdown {
+                    position: absolute;
+                    inset: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--f-display);
+                    font-style: italic;
+                    font-size: 84px;
+                    color: var(--cream);
+                    text-shadow: 0 4px 18px rgba(0,0,0,0.45);
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                    pointer-events: none;
+                }
+
+                    .camera-countdown.show {
+                        opacity: 1;
+                    }
+
+                .camera-shotcount {
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
+                    padding: 5px 12px;
+                    background: rgba(74,21,36,0.55);
+                    border: 1px solid var(--gold-light);
+                    color: var(--cream);
+                    font-family: var(--f-utility);
+                    font-size: 11px;
+                    letter-spacing: 0.14em;
+                    text-transform: uppercase;
+                    border-radius: 20px;
+                }
+
+                .camera-note {
+                    margin: 16px 0 0;
+                    font-size: 15.5px;
+                    color: var(--ink-soft);
+                    font-style: italic;
+                }
+
+                .camera-actions {
+                    display: flex;
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .camera-error {
+                    display: none;
+                    margin: 14px 0 0;
+                    font-family: var(--f-utility);
+                    font-size: 13.5px;
+                    line-height: 1.5;
+                    color: #a12f2f;
+                }
+
+                    .camera-error.show {
+                        display: block;
+                    }
+
+                #strip-canvas {
+                    width: 100%;
+                    max-width: 300px;
+                    height: auto;
+                    border: 1px solid var(--gold);
+                    box-shadow: 0 20px 40px -20px rgba(74,21,36,0.4);
+                }
+
+                @media (max-width:420px) {
+                    .layout-options {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .layout-opt {
+                        flex-direction: row;
+                        justify-content: flex-start;
+                        text-align: left;
+                    }
+                }
+
+                /* =====================================================
              DRESS CODE / MOTIF
           ===================================================== */
                 .motif-section {
@@ -2040,50 +2370,91 @@
         </div>
     </section>
 
-    <!-- ================= DRESS CODE / MOTIF ================= -->
-    <section class="motif-section" id="motif">
-        <div class="section">
-            <div class="section-head reveal">
-                <div class="eyebrow">Dress Code</div>
-                <h2>Our Motif</h2>
-                <p>Kindly wear a shade from our palette so the whole room glows together.</p>
-            </div>
-            <div class="swatches reveal">
-                <div class="swatch"><div class="chip" style="background:#FFFFFF;"></div><div class="name">White</div></div>
-                <div class="swatch"><div class="chip" style="background:#F5F0E6;"></div><div class="name">Cream</div></div>
-                <div class="swatch"><div class="chip" style="background:#D8C9AE;"></div><div class="name">Beige</div></div>
-                <div class="swatch"><div class="chip" style="background:#A8A8A2;"></div><div class="name">Gray</div></div>
-            </div>
-            <p class="motif-note reveal">Think effortless elegance with a tropical touch. Lightweight fabrics, flowy dresses, linen shirts, and smart trousers are encouraged. Kindly refrain from wearing bright or neon colors.</p>
-            <div class="motif-highlight reveal">
-                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 17c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0" /><path d="M4 13V7a2 2 0 0 1 2-2h4l2 3h6a2 2 0 0 1 2 2v3" /></svg>
-                <p>Guests planning to enjoy the pool are kindly requested to bring and wear appropriate swimwear. A change of clothes is encouraged, with guests kindly asked to continue observing the Resort Chic, Summer Semi-Formal, or Poolside Semi-Formal dress code.</p>
-            </div>
-        </div>
-    </section>
-
     <!-- ================= DIY PHOTOBOOTH ================= -->
     <section class="photobooth-section" id="photobooth">
         <div class="section">
-            <div class="booth-grid reveal">
-                <div class="booth-copy">
-                    <div class="eyebrow">Capture The Night</div>
-                    <h2 style="font-family:var(--f-display); font-style:italic; font-size:clamp(30px,4.4vw,42px); color:var(--wine); margin:14px 0 20px;">DIY Photobooth</h2>
-                    <p>We've set up a little corner just for photos — no photographer needed! Strike a pose, keep a memory, and help fill our guestbook with your favorite shot of the night.</p>
-                    <ul class="booth-list">
-                        <li><span class="bnum">1</span><span>Find the photobooth corner near the reception area, framed with roses and fairy lights.</span></li>
-                        <li><span class="bnum">2</span><span>Grab a prop from the basket — sashes, signs, and a few silly extras included.</span></li>
-                        <li><span class="bnum">3</span><span>Use the ring light and tripod provided, or simply hand your phone to a friend.</span></li>
-                        <li><span class="bnum">4</span><span>Print a copy for our guestbook, and keep a digital copy for yourself.</span></li>
-                    </ul>
-                    <div class="booth-note">Strike a pose, it's part of the celebration!</div>
+            <div class="section-head reveal">
+                <div class="eyebrow">Capture The Night</div>
+                <h2>DIY Photobooth</h2>
+                <p>Right from your phone — pick a strip, strike your best pose on the countdown, and download your own keepsake before you go.</p>
+            </div>
+
+            <!-- ============================================================
+                 PHOTOBOOTH APP — self-contained widget.
+                 Three steps, toggled via [hidden]: setup → camera → result.
+                 Logic lives in the "DIY Photobooth" script block near the
+                 bottom of the page (function buildPhotobooth). Edit
+                 BOOTH_LAYOUTS there to add/remove strip formats.
+                 ============================================================ -->
+            <div class="booth-app reveal" id="booth-app">
+
+                <!-- STEP 1 — choose strip layout + countdown timer -->
+                <div class="booth-step" data-step="setup" id="booth-step-setup">
+                    <div class="booth-step-label">Step One · Choose Your Strip</div>
+                    <div class="layout-options" id="layout-options">
+                        <button type="button" class="layout-opt active" data-layout="strip3" data-shots="3" aria-pressed="true">
+                            <span class="opt-preview"><span class="opt-frame"></span><span class="opt-frame"></span><span class="opt-frame"></span></span>
+                            <span class="opt-name">Classic Strip</span>
+                            <span class="opt-sub">3 Photos</span>
+                        </button>
+                        <button type="button" class="layout-opt" data-layout="strip2" data-shots="2" aria-pressed="false">
+                            <span class="opt-preview"><span class="opt-frame"></span><span class="opt-frame"></span></span>
+                            <span class="opt-name">Duo Strip</span>
+                            <span class="opt-sub">2 Photos</span>
+                        </button>
+                        <button type="button" class="layout-opt" data-layout="polaroid" data-shots="1" aria-pressed="false">
+                            <span class="opt-preview"><span class="opt-frame"></span></span>
+                            <span class="opt-name">Polaroid</span>
+                            <span class="opt-sub">1 Photo</span>
+                        </button>
+                    </div>
+
+                    <div class="booth-step-label">Step Two · Set Your Timer</div>
+                    <div class="timer-options" id="timer-options">
+                        <button type="button" class="timer-opt" data-timer="3" aria-pressed="false">3s</button>
+                        <button type="button" class="timer-opt active" data-timer="5" aria-pressed="true">5s</button>
+                        <button type="button" class="timer-opt" data-timer="10" aria-pressed="false">10s</button>
+                    </div>
+
+                    <button type="button" class="booth-cta" id="enter-booth-btn">Enter The Booth</button>
+                    <button type="button" class="booth-link" id="upload-instead-btn">or upload photos instead</button>
+                    <input type="file" id="booth-upload-input" accept="image/*" multiple hidden>
                 </div>
-                <div class="booth-frame">
-                    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13.5" r="3.5" /></svg>
-                    <div class="cap1 script">Smile!</div>
-                    <div class="cap2">Photobooth Corner</div>
+
+                <!-- STEP 2 — live camera + countdown capture -->
+                <div class="booth-step" data-step="camera" id="booth-step-camera" hidden>
+                    <div class="camera-frame">
+                        <video id="booth-video" autoplay playsinline muted></video>
+                        <div class="camera-flash" id="camera-flash"></div>
+                        <div class="camera-countdown" id="camera-countdown"></div>
+                        <div class="camera-shotcount" id="camera-shotcount" hidden></div>
+                    </div>
+                    <p class="camera-note" id="camera-note">Center yourself in frame, then start when you're ready.</p>
+                    <div class="camera-actions">
+                        <button type="button" class="booth-cta" id="start-capture-btn">Start Capture</button>
+                        <button type="button" class="booth-ghost" id="cancel-camera-btn">Back</button>
+                    </div>
+                    <p class="camera-error" id="camera-error"></p>
+                </div>
+
+                <!-- STEP 3 — composited strip/polaroid result -->
+                <div class="booth-step" data-step="result" id="booth-step-result" hidden>
+                    <div class="booth-step-label" style="text-align:center;">Your Keepsake</div>
+                    <canvas id="strip-canvas"></canvas>
+                    <div class="camera-actions">
+                        <a class="booth-cta" id="download-strip-btn" download="aubrey-debut-photobooth.png">Download My Strip</a>
+                        <button type="button" class="booth-ghost" id="retake-btn">Take Another</button>
+                    </div>
                 </div>
             </div>
+
+            <ul class="booth-list reveal" style="max-width:460px; margin:44px auto 0;">
+                <li><span class="bnum">1</span><span>Pick a Classic 3-Strip, a Duo, or a Solo Polaroid.</span></li>
+                <li><span class="bnum">2</span><span>Set your countdown — 3, 5, or 10 seconds a shot.</span></li>
+                <li><span class="bnum">3</span><span>Strike your poses right on your phone's camera.</span></li>
+                <li><span class="bnum">4</span><span>Download it, print it, or send it straight to us.</span></li>
+            </ul>
+            <div class="booth-note script reveal" style="text-align:center;">Strike a pose, it's part of the celebration!</div>
         </div>
     </section>
 
@@ -2406,6 +2777,327 @@
     });
   })();
 
+
+  // ---------- DIY Photobooth ----------
+  // Self-contained: camera capture with a live countdown, an upload
+  // fallback for browsers/contexts where getUserMedia isn't available,
+  // and a canvas compositor that renders the final strip/polaroid in
+  // the site's own palette. Add or resize layouts by editing
+  // BOOTH_LAYOUTS below — the slot math and footer typography scale
+  // automatically from canvasW / canvasH / footerH.
+  (function buildPhotobooth(){
+    const boothApp = document.getElementById('booth-app');
+    if(!boothApp) return;
+
+    const BOOTH_LAYOUTS = {
+      strip3:   { label: 'Classic Strip',  shots: 3, canvasW: 600, canvasH: 1840, pad: 34, gap: 20, footerH: 270 },
+      strip2:   { label: 'Duo Strip',      shots: 2, canvasW: 600, canvasH: 1320, pad: 34, gap: 20, footerH: 270 },
+      polaroid: { label: 'Solo Polaroid',  shots: 1, canvasW: 680, canvasH: 860,  pad: 30, gap: 0,  footerH: 190 }
+    };
+
+    const layoutButtons   = Array.from(document.querySelectorAll('.layout-opt'));
+    const timerButtons    = Array.from(document.querySelectorAll('.timer-opt'));
+    const enterBoothBtn   = document.getElementById('enter-booth-btn');
+    const uploadInsteadBtn= document.getElementById('upload-instead-btn');
+    const uploadInput     = document.getElementById('booth-upload-input');
+    const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+    const startCaptureBtn = document.getElementById('start-capture-btn');
+    const retakeBtn       = document.getElementById('retake-btn');
+    const boothVideo      = document.getElementById('booth-video');
+    const flashEl         = document.getElementById('camera-flash');
+    const countdownEl     = document.getElementById('camera-countdown');
+    const shotCountEl     = document.getElementById('camera-shotcount');
+    const cameraNote      = document.getElementById('camera-note');
+    const cameraError     = document.getElementById('camera-error');
+    const stripCanvas     = document.getElementById('strip-canvas');
+    const downloadBtn     = document.getElementById('download-strip-btn');
+
+    let selectedLayout = 'strip3';
+    let selectedTimer = 5;
+    let mediaStream = null;
+    let capturedShots = []; // array of drawable elements (canvas or Image)
+    let charmImgPromise = null;
+
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function goToStep(step){
+      ['setup','camera','result'].forEach(s => {
+        document.getElementById(`booth-step-${s}`).hidden = (s !== step);
+      });
+    }
+
+    // ---- Step 1: layout + timer selection ----
+    layoutButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        layoutButtons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed','true');
+        selectedLayout = btn.dataset.layout;
+      });
+    });
+
+    timerButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        timerButtons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed','true');
+        selectedTimer = parseInt(btn.dataset.timer, 10);
+      });
+    });
+
+    // ---- Camera lifecycle ----
+    async function startCamera(){
+      cameraError.classList.remove('show');
+      startCaptureBtn.disabled = false;
+
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        cameraError.textContent = "This browser can't reach your camera from here. Try \u201cupload photos instead,\u201d or open this invitation in Chrome or Safari.";
+        cameraError.classList.add('show');
+        startCaptureBtn.disabled = true;
+        return;
+      }
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 1280 } },
+          audio: false
+        });
+        boothVideo.srcObject = mediaStream;
+        await boothVideo.play().catch(() => {});
+      } catch(err){
+        console.error('Photobooth camera error:', err);
+        cameraError.textContent = "We couldn't get your camera — please allow camera access, or use \u201cupload photos instead\u201d below.";
+        cameraError.classList.add('show');
+        startCaptureBtn.disabled = true;
+      }
+    }
+
+    function stopCamera(){
+      if(mediaStream){
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      boothVideo.srcObject = null;
+    }
+
+    enterBoothBtn.addEventListener('click', async () => {
+      capturedShots = [];
+      cameraNote.textContent = "Center yourself in frame, then start when you're ready.";
+      shotCountEl.hidden = true;
+      cancelCameraBtn.disabled = false;
+      goToStep('camera');
+      await startCamera();
+    });
+
+    cancelCameraBtn.addEventListener('click', () => {
+      stopCamera();
+      goToStep('setup');
+    });
+
+    window.addEventListener('pagehide', stopCamera);
+
+    // ---- Capture sequence: countdown -> flash -> grab frame, repeat ----
+    function grabFrame(){
+      const off = document.createElement('canvas');
+      off.width = boothVideo.videoWidth || 960;
+      off.height = boothVideo.videoHeight || 1280;
+      const ctx = off.getContext('2d');
+      // Mirror the grab so the download matches the mirrored preview
+      // the guest actually posed against.
+      ctx.translate(off.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(boothVideo, 0, 0, off.width, off.height);
+      return off;
+    }
+
+    async function runCountdown(seconds){
+      countdownEl.classList.add('show');
+      for(let s = seconds; s >= 1; s--){
+        countdownEl.textContent = String(s);
+        await sleep(1000);
+      }
+      countdownEl.textContent = '';
+      countdownEl.classList.remove('show');
+    }
+
+    async function runCaptureSequence(){
+      const cfg = BOOTH_LAYOUTS[selectedLayout];
+      startCaptureBtn.disabled = true;
+      cancelCameraBtn.disabled = true;
+      shotCountEl.hidden = false;
+      capturedShots = [];
+
+      for(let i = 1; i <= cfg.shots; i++){
+        shotCountEl.textContent = `Shot ${i} of ${cfg.shots}`;
+        cameraNote.textContent = 'Hold still — capturing on the countdown…';
+        await runCountdown(selectedTimer);
+
+        capturedShots.push(grabFrame());
+        flashEl.classList.remove('fire');
+        void flashEl.offsetWidth; // restart the flash animation
+        flashEl.classList.add('fire');
+
+        cameraNote.textContent = i < cfg.shots ? 'Lovely! Get ready for the next one…' : 'That\u2019s a wrap!';
+        await sleep(i < cfg.shots ? 1100 : 500);
+      }
+
+      stopCamera();
+      await renderResult();
+      goToStep('result');
+    }
+
+    startCaptureBtn.addEventListener('click', () => { runCaptureSequence(); });
+
+    // ---- Upload fallback (no camera / permission denied) ----
+    function loadImageFile(file){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    uploadInsteadBtn.addEventListener('click', () => {
+      const shots = BOOTH_LAYOUTS[selectedLayout].shots;
+      uploadInput.multiple = shots > 1;
+      uploadInput.value = '';
+      uploadInput.click();
+    });
+
+    uploadInput.addEventListener('change', async (e) => {
+      const cfg = BOOTH_LAYOUTS[selectedLayout];
+      const files = Array.from(e.target.files || []).slice(0, cfg.shots);
+      if(files.length < cfg.shots){
+        alert(`Please choose ${cfg.shots} photo${cfg.shots > 1 ? 's' : ''} for the ${cfg.label}.`);
+        return;
+      }
+      try {
+        capturedShots = await Promise.all(files.map(loadImageFile));
+        await renderResult();
+        goToStep('result');
+      } catch(err){
+        console.error('Photobooth upload error:', err);
+        alert("Something went wrong reading those photos — please try again.");
+      }
+    });
+
+    retakeBtn.addEventListener('click', () => {
+      capturedShots = [];
+      goToStep('setup');
+    });
+
+    // ---- Canvas compositor ----
+    function loadCharmImage(){
+      if(!charmImgPromise){
+        charmImgPromise = new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null); // degrade gracefully without the charm portrait
+          img.src = '3panel3.JPG';
+        });
+      }
+      return charmImgPromise;
+    }
+
+    function drawImageCover(ctx, img, x, y, w, h){
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const scale = Math.max(w / iw, h / ih);
+      const dw = iw * scale, dh = ih * scale;
+      const dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+    }
+
+    async function renderResult(){
+      const cfg = BOOTH_LAYOUTS[selectedLayout];
+      stripCanvas.width = cfg.canvasW;
+      stripCanvas.height = cfg.canvasH;
+      const ctx = stripCanvas.getContext('2d');
+
+      await Promise.all([
+        document.fonts.load(`400 ${Math.round(cfg.canvasW * 0.09)}px Parisienne`),
+        document.fonts.load('italic 600 34px "Playfair Display"'),
+        document.fonts.load(`500 ${Math.round(cfg.canvasW * 0.026)}px Jost`)
+      ]);
+      const charm = await loadCharmImage();
+
+      // background + outer frame
+      ctx.fillStyle = '#FFFBF8';
+      ctx.fillRect(0, 0, cfg.canvasW, cfg.canvasH);
+      ctx.strokeStyle = '#C8A15C';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(9, 9, cfg.canvasW - 18, cfg.canvasH - 18);
+
+      // photo slots, stacked top to bottom with a hairline rose border
+      const slotAreaH = cfg.canvasH - cfg.pad - cfg.footerH;
+      const slotW = cfg.canvasW - cfg.pad * 2;
+      const slotH = (slotAreaH - cfg.gap * (cfg.shots - 1)) / cfg.shots;
+      const slotX = cfg.pad;
+
+      capturedShots.forEach((img, i) => {
+        const slotY = cfg.pad + i * (slotH + cfg.gap);
+        drawImageCover(ctx, img, slotX, slotY, slotW, slotH);
+        ctx.strokeStyle = 'rgba(109,35,51,0.5)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(slotX, slotY, slotW, slotH);
+      });
+
+      // footer — divider, "See You There" script line, date/hashtag,
+      // and a circular portrait charm from the debutante's own photo
+      const footerTop = cfg.canvasH - cfg.footerH;
+      const centerX = cfg.canvasW / 2;
+
+      ctx.strokeStyle = '#C8A15C';
+      ctx.lineWidth = 1.5;
+      const dividerY = footerTop + cfg.footerH * 0.14;
+      const dividerW = cfg.canvasW * 0.16;
+      ctx.beginPath();
+      ctx.moveTo(centerX - dividerW / 2, dividerY);
+      ctx.lineTo(centerX + dividerW / 2, dividerY);
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+
+      const scriptSize = Math.round(cfg.canvasW * 0.09);
+      ctx.fillStyle = '#A44A63';
+      ctx.font = `400 ${scriptSize}px Parisienne`;
+      ctx.fillText('See You There', centerX, footerTop + cfg.footerH * 0.42);
+
+      const smallSize = Math.round(cfg.canvasW * 0.026);
+      ctx.fillStyle = '#6b3a48';
+      ctx.font = `500 ${smallSize}px Jost`;
+      ctx.fillText(`${DEBUT.hashtag.toUpperCase()}  \u00B7  ${DEBUT.displayDate.toUpperCase()}`, centerX, footerTop + cfg.footerH * 0.58);
+
+      if(charm){
+        const r = cfg.canvasW * 0.052;
+        const cy = footerTop + cfg.footerH * 0.80;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, cy, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        drawImageCover(ctx, charm, centerX - r, cy - r, r * 2, r * 2);
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(centerX, cy, r, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#C8A15C';
+        ctx.stroke();
+      }
+
+      const dataUrl = stripCanvas.toDataURL('image/png');
+      downloadBtn.href = dataUrl;
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBtn.setAttribute('download', `aubrey-debut-${cfg.label.toLowerCase().replace(/\s+/g, '-')}-${stamp}.png`);
+    }
+  })();
 
   const EMAILJS_CONFIG = {
     publicKey:  "Y7deg_y9Fb47hc9Td", // Account → General → Public Key
