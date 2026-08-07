@@ -182,7 +182,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background-image: linear-gradient(rgba(30,6,12,0.42), rgba(30,6,12,0.6)), url('OpeningPhoto2.png');
+            background-image: linear-gradient(rgba(30,6,12,0.42), rgba(30,6,12,0.6)), url('OpeningPhoto.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -561,6 +561,34 @@
                         transform: translateX(0);
                     }
 
+                    .menu-close {
+                        position: absolute;
+                        top: 20px;
+                        right: clamp(20px,5vw,32px);
+                        width: 44px;
+                        height: 44px;
+                        border-radius: 50%;
+                        border: 1px solid rgba(255,255,255,0.28);
+                        background: rgba(255,255,255,0.06);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        color: var(--blush-light);
+                        transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+                    }
+
+                        .menu-close svg {
+                            width: 18px;
+                            height: 18px;
+                        }
+
+                        .menu-close:hover, .menu-close:focus-visible {
+                            background: rgba(255,255,255,0.14);
+                            border-color: var(--gold-light);
+                            transform: rotate(90deg);
+                        }
+
                     .menu-panel nav {
                         display: flex;
                         flex-direction: column;
@@ -627,7 +655,9 @@
                     text-align: center;
                     position: relative;
                     padding: calc(var(--nav-h) + 40px) 24px 80px;
-                    background: radial-gradient(ellipse 60% 45% at 50% 0%, rgba(217,140,165,0.28), transparent 70%), linear-gradient(180deg, var(--blush-light), var(--cream) 65%);
+                    background:
+                        radial-gradient(ellipse 60% 45% at 50% 0%, rgba(217,140,165,0.28), transparent 70%),
+                        linear-gradient(180deg, var(--blush-light), var(--cream) 65%);
                     overflow: hidden;
                 }
 
@@ -737,6 +767,16 @@
                 /* =====================================================
              DEBUTANTE — three-panel triptych
           ===================================================== */
+                .debutante-section {
+                    /* Deeper rose wash than the hero above it, so the two
+                       light sections read as distinct bands rather than
+                       one continuous field. */
+                    background:
+                        radial-gradient(ellipse 65% 55% at 12% 0%, rgba(164,74,99,0.16), transparent 60%),
+                        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(200,161,92,0.14), transparent 55%),
+                        linear-gradient(175deg, #F8E3EA 0%, #FBEFF3 55%, var(--cream) 100%);
+                }
+
                 .debutante-intro {
                     max-width: 640px;
                     margin: 0 auto 68px;
@@ -886,7 +926,12 @@
              DETAILS
           ===================================================== */
                 .details-section {
-                    background: var(--blush-light);
+                    /* Warm, gold-flecked cream — a lighter beat after the
+                       rose-heavy debutante band. */
+                    background:
+                        radial-gradient(circle at 6% 10%, rgba(200,161,92,0.16), transparent 42%),
+                        radial-gradient(circle at 94% 88%, rgba(217,140,165,0.14), transparent 46%),
+                        linear-gradient(180deg, var(--blush-light), var(--cream));
                 }
 
                 .detail-grid {
@@ -938,6 +983,132 @@
                         grid-template-columns: 1fr;
                     }
                 }
+
+                /* =====================================================
+             CALENDAR — aesthetic month view, event day highlighted.
+             Built dynamically from DEBUT.isoDate (see script below) so
+             the grid, weekday alignment, and highlighted day always
+             stay in sync with a single source of truth.
+          ===================================================== */
+                .calendar-card {
+                    margin-top: 2px;
+                    background: var(--cream);
+                    border: 1px solid rgba(109,35,51,0.14);
+                    padding: clamp(32px,5vw,52px) clamp(24px,5vw,64px) clamp(40px,5vw,56px);
+                }
+
+                .calendar-head {
+                    text-align: center;
+                    margin-bottom: 30px;
+                }
+
+                    .calendar-head .eyebrow {
+                        margin-bottom: 12px;
+                    }
+
+                    .calendar-month {
+                        font-family: var(--f-display);
+                        font-style: italic;
+                        font-size: clamp(24px,3.4vw,32px);
+                        color: var(--wine);
+                    }
+
+                .calendar-dow {
+                    display: grid;
+                    grid-template-columns: repeat(7,1fr);
+                    max-width: 420px;
+                    margin: 0 auto 10px;
+                }
+
+                    .calendar-dow span {
+                        text-align: center;
+                        font-family: var(--f-utility);
+                        font-size: 11px;
+                        letter-spacing: 0.14em;
+                        text-transform: uppercase;
+                        color: var(--rose-deep);
+                        opacity: 0.75;
+                    }
+
+                .calendar-grid {
+                    display: grid;
+                    grid-template-columns: repeat(7,1fr);
+                    row-gap: 6px;
+                    max-width: 420px;
+                    margin: 0 auto;
+                }
+
+                .calendar-day {
+                    position: relative;
+                    aspect-ratio: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto;
+                    width: 84%;
+                    border-radius: 50%;
+                    font-family: var(--f-display);
+                    font-size: clamp(13px,2vw,16px);
+                    color: var(--ink-soft);
+                    transition: background 0.3s ease, color 0.3s ease;
+                }
+
+                    .calendar-day.empty {
+                        visibility: hidden;
+                    }
+
+                    .calendar-day.today {
+                        border: 1px solid var(--gold);
+                        color: var(--wine);
+                        font-weight: 600;
+                    }
+
+                    .calendar-day.event {
+                        background: radial-gradient(circle at 30% 25%, var(--rose-deep), var(--wine) 75%);
+                        color: var(--cream);
+                        font-weight: 600;
+                        box-shadow: 0 6px 16px -4px rgba(109,35,51,0.55);
+                        animation: cal-pulse 2.6s ease-in-out infinite;
+                    }
+
+                        .calendar-day.event::after {
+                            content: "";
+                            position: absolute;
+                            inset: -5px;
+                            border: 1px solid var(--gold);
+                            border-radius: 50%;
+                        }
+
+                @keyframes cal-pulse {
+                    0%,100% {
+                        box-shadow: 0 6px 16px -4px rgba(109,35,51,0.55), 0 0 0 0 rgba(200,161,92,0.35);
+                    }
+
+                    50% {
+                        box-shadow: 0 6px 16px -4px rgba(109,35,51,0.55), 0 0 0 6px rgba(200,161,92,0);
+                    }
+                }
+
+                .calendar-legend {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    margin-top: 26px;
+                    font-family: var(--f-utility);
+                    font-size: 12px;
+                    letter-spacing: 0.14em;
+                    text-transform: uppercase;
+                    color: var(--ink-soft);
+                }
+
+                    .calendar-legend-dot {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                        background: radial-gradient(circle at 30% 25%, var(--rose-deep), var(--wine) 75%);
+                        box-shadow: 0 0 0 2px var(--cream), 0 0 0 3px var(--gold);
+                    }
 
                 .map-card {
                     margin-top: 2px;
@@ -992,9 +1163,16 @@
           ===================================================== */
                 .countdown-section {
                     text-align: center;
-                    background: linear-gradient(180deg, var(--wine-deep), var(--wine));
+                    /* Dark wine anchor — the big contrast beat in the
+                       rhythm. Faint gold + rose glow add depth without
+                       competing with the clock numerals. */
+                    background:
+                        radial-gradient(circle at 18% 15%, rgba(233,211,160,0.10), transparent 38%),
+                        radial-gradient(circle at 85% 90%, rgba(217,140,165,0.10), transparent 42%),
+                        linear-gradient(180deg, var(--wine-deep), var(--wine));
                     color: var(--blush-light);
                     padding: 100px 24px;
+                    position: relative;
                 }
 
                     .countdown-section .eyebrow {
@@ -1044,7 +1222,12 @@
              DIY PHOTOBOOTH
           ===================================================== */
                 .photobooth-section {
-                    background: var(--cream);
+                    /* Bright, airy cream with a soft rose glow behind the
+                       booth frame — a palate-cleanser after the dark
+                       countdown band. */
+                    background:
+                        radial-gradient(circle at 82% 25%, rgba(217,140,165,0.12), transparent 45%),
+                        linear-gradient(180deg, var(--cream), var(--blush-light) 130%);
                 }
 
                 .booth-grid {
@@ -1151,7 +1334,11 @@
              DRESS CODE / MOTIF
           ===================================================== */
                 .motif-section {
-                    background: var(--blush-light);
+                    /* Deeper blush wash top-down, distinct from both the
+                       photobooth section above and the RSVP band below. */
+                    background:
+                        radial-gradient(ellipse 90% 60% at 50% 0%, rgba(255,255,255,0.55), transparent 62%),
+                        linear-gradient(180deg, var(--blush) 0%, var(--blush-light) 100%);
                 }
 
                 .swatches {
@@ -1227,6 +1414,16 @@
                 /* =====================================================
              RSVP
           ===================================================== */
+                .rsvp-section {
+                    /* Warm rose-gold wash to close the alternating rhythm
+                       before the footer — the card itself stays cream so
+                       it lifts forward off this deeper band. */
+                    background:
+                        radial-gradient(ellipse 70% 55% at 88% 0%, rgba(164,74,99,0.14), transparent 58%),
+                        radial-gradient(ellipse 60% 45% at 5% 100%, rgba(200,161,92,0.12), transparent 50%),
+                        linear-gradient(180deg, var(--blush-light) 0%, var(--cream) 130%);
+                }
+
                 .rsvp-card {
                     max-width: 600px;
                     margin: 0 auto;
@@ -1234,6 +1431,7 @@
                     border: 1px solid rgba(109,35,51,0.16);
                     padding: clamp(30px,5vw,56px);
                     position: relative;
+                    box-shadow: 0 24px 48px -24px rgba(74,21,36,0.22);
                 }
 
                     .rsvp-card::before {
@@ -1380,14 +1578,19 @@
           ===================================================== */
                 footer {
                     text-align: center;
-                    padding: 80px 24px 50px;
-                    background: linear-gradient(180deg, var(--cream), var(--blush-light));
+                    padding: 90px 24px 60px;
+                    /* Bold wine close to bookend the light body sections —
+                       mirrors the countdown band so the page opens and
+                       closes on the same strong note. */
+                    background:
+                        radial-gradient(ellipse 65% 55% at 50% 0%, rgba(233,211,160,0.10), transparent 60%),
+                        linear-gradient(180deg, var(--wine) 0%, var(--wine-deep) 100%);
                 }
 
                     footer .fscript {
                         font-family: var(--f-script);
                         font-size: clamp(28px,5vw,38px);
-                        color: var(--rose-deep);
+                        color: var(--gold-light);
                         margin-bottom: 10px;
                     }
 
@@ -1395,7 +1598,7 @@
                         font-family: var(--f-utility);
                         font-size: 13px;
                         letter-spacing: 0.14em;
-                        color: var(--ink-soft);
+                        color: rgba(255,251,248,0.78);
                         margin-bottom: 26px;
                     }
 
@@ -1403,7 +1606,7 @@
                         font-family: var(--f-utility);
                         font-size: 12px;
                         letter-spacing: 0.2em;
-                        color: var(--gold);
+                        color: var(--gold-light);
                         text-transform: uppercase;
                     }
     </style>
@@ -1480,6 +1683,9 @@
 
     <div class="menu-scrim" id="menu-scrim"></div>
     <div class="menu-panel" id="menu-panel">
+        <button class="menu-close" id="menu-close-btn" aria-label="Close menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
         <nav aria-label="Section navigation">
             <a href="#home" class="menu-link"><span class="num">I.</span> Home</a>
             <a href="#debutante" class="menu-link"><span class="num">II.</span> The Debutante</a>
@@ -1510,7 +1716,8 @@
     </section>
 
     <!-- ================= DEBUTANTE ================= -->
-    <section class="section" id="debutante">
+    <section class="debutante-section" id="debutante">
+      <div class="section">
         <div class="section-head reveal">
             <div class="eyebrow">The Debutante</div>
             <h2>Eighteen Years, Three Chapters</h2>
@@ -1545,6 +1752,7 @@
             <p>This night is a thank-you to everyone who helped write the chapters so far — the ones who cheered from the sidelines, held my hand through the hard parts, and celebrated every small win along the way. I would be so honoured to have you beside me as I turn the page into something new.</p>
             <div class="signoff">— with love, Aubrey</div>
         </div>
+      </div>
     </section>
 
     <!-- ================= DETAILS ================= -->
@@ -1575,6 +1783,17 @@
                     <div class="sub" id="detail-address">Indigo Bay Subdivision, Bagong Kalsada, 4027 Calamba</div>
                 </div>
             </div>
+
+            <div class="calendar-card reveal">
+                <div class="calendar-head">
+                    <div class="eyebrow">Mark Your Calendar</div>
+                    <div class="calendar-month" id="cal-month">August 2026</div>
+                </div>
+                <div class="calendar-dow" id="cal-dow"></div>
+                <div class="calendar-grid" id="cal-grid"></div>
+                <div class="calendar-legend"><span class="calendar-legend-dot"></span> The Big Night</div>
+            </div>
+
             <div class="map-card reveal">
                 <iframe class="map-frame"
                         src="https://www.google.com/maps?q=14.1761234,121.1951581&hl=en&z=16&output=embed"
@@ -1651,7 +1870,8 @@
     </section>
 
     <!-- ================= RSVP ================= -->
-    <section class="section" id="rsvp">
+    <section class="rsvp-section" id="rsvp">
+      <div class="section">
         <div class="section-head reveal">
             <div class="eyebrow">Kindly Respond</div>
             <h2>RSVP</h2>
@@ -1687,6 +1907,7 @@
             </div>
             <p class="rsvp-deadline">Kindly respond by <strong id="rsvp-deadline-date">August 5, 2026</strong></p>
         </div>
+      </div>
     </section>
 
     <!-- ================= FOOTER ================= -->
@@ -1763,6 +1984,7 @@
   const burgerBtn = document.getElementById('burger-btn');
   const menuPanel = document.getElementById('menu-panel');
   const menuScrim = document.getElementById('menu-scrim');
+  const menuCloseBtn = document.getElementById('menu-close-btn');
 
   function toggleMenu(open){
     const isOpen = open !== undefined ? open : !menuPanel.classList.contains('open');
@@ -1772,6 +1994,7 @@
     burgerBtn.setAttribute('aria-expanded', String(isOpen));
   }
   burgerBtn.addEventListener('click', () => toggleMenu());
+  menuCloseBtn.addEventListener('click', () => toggleMenu(false));
   menuScrim.addEventListener('click', () => toggleMenu(false));
   document.querySelectorAll('.menu-link').forEach(link => {
     link.addEventListener('click', () => toggleMenu(false));
@@ -1791,6 +2014,49 @@
     });
   }, { threshold: 0.15 });
   revealEls.forEach(el => io.observe(el));
+
+  // ---------- Calendar ----------
+  // Builds the month grid entirely from DEBUT.isoDate, so the header,
+  // weekday alignment, and highlighted event day always stay correct
+  // even if the date in the config object changes.
+  (function buildCalendar(){
+    const eventDate = new Date(DEBUT.isoDate);
+    const year = eventDate.getFullYear();
+    const month = eventDate.getMonth(); // 0-indexed
+    const eventDay = eventDate.getDate();
+    const today = new Date();
+
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    document.getElementById('cal-month').textContent = `${monthNames[month]} ${year}`;
+
+    const dowRow = document.getElementById('cal-dow');
+    ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(d => {
+      const span = document.createElement('span');
+      span.textContent = d;
+      dowRow.appendChild(span);
+    });
+
+    const grid = document.getElementById('cal-grid');
+    const firstWeekday = new Date(year, month, 1).getDay(); // 0 = Sunday
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for(let i = 0; i < firstWeekday; i++){
+      const empty = document.createElement('div');
+      empty.className = 'calendar-day empty';
+      grid.appendChild(empty);
+    }
+
+    for(let day = 1; day <= daysInMonth; day++){
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+      cell.textContent = day;
+      if(day === eventDay) cell.classList.add('event');
+      if(day === today.getDate() && month === today.getMonth() && year === today.getFullYear()){
+        cell.classList.add('today');
+      }
+      grid.appendChild(cell);
+    }
+  })();
 
   // ---------- Countdown timer ----------
   const target = new Date(DEBUT.isoDate).getTime();
