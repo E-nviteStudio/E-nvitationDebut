@@ -1648,6 +1648,16 @@
                     box-shadow: 0 20px 40px -20px rgba(74,21,36,0.4);
                 }
 
+                .booth-save-hint {
+                    margin: 14px 0 0;
+                    font-family: var(--f-utility);
+                    font-size: 12.5px;
+                    line-height: 1.5;
+                    color: var(--ink-soft);
+                    font-style: italic;
+                    text-align: center;
+                }
+
                 @media (max-width:420px) {
                     .layout-options {
                         grid-template-columns: 1fr;
@@ -2442,9 +2452,10 @@
                     <div class="booth-step-label" style="text-align:center;">Your Keepsake</div>
                     <canvas id="strip-canvas"></canvas>
                     <div class="camera-actions">
-                        <a class="booth-cta" id="download-strip-btn" download="aubrey-debut-photobooth.png">Download My Strip</a>
+                        <a class="booth-cta" id="download-strip-btn" download="aubrey-debut-photobooth.png" href="#">Save My Strip</a>
                         <button type="button" class="booth-ghost" id="retake-btn">Take Another</button>
                     </div>
+                    <p class="booth-save-hint" id="booth-save-hint">Tap "Save My Strip" — on phones this opens your share sheet so you can save straight to Photos. If nothing happens, press and hold the image above and choose "Save Image."</p>
                 </div>
             </div>
 
@@ -2785,6 +2796,22 @@
   // the site's own palette. Add or resize layouts by editing
   // BOOTH_LAYOUTS below — the slot math and footer typography scale
   // automatically from canvasW / canvasH / footerH.
+  //
+  // DOWNLOAD STRATEGY (cross-device):
+  // Mobile browsers — especially iOS Safari — do not reliably honor
+  // `<a download>` on a data: URL; tapping it often just opens the
+  // image instead of saving it. To make "save the photo" work
+  // everywhere we:
+  //   1. Render the canvas to a real Blob (canvas.toBlob), not a
+  //      data URL, and point the link at an Object URL made from it.
+  //   2. On tap, first try the Web Share API with a file attached
+  //      (navigator.share / canShare) — this opens the native share
+  //      sheet on iOS/Android with a direct "Save Image" option.
+  //   3. If Web Share isn't available (most desktop browsers), fall
+  //      back to a normal blob-URL anchor download, which desktop
+  //      browsers handle correctly.
+  //   4. The canvas image itself stays visible so guests can always
+  //      long-press / right-click "Save Image" as a manual fallback.
   (function buildPhotobooth(){
     const boothApp = document.getElementById('booth-app');
     if(!boothApp) return;
@@ -2811,6 +2838,7 @@
     const cameraError     = document.getElementById('camera-error');
     const stripCanvas     = document.getElementById('strip-canvas');
     const downloadBtn     = document.getElementById('download-strip-btn');
+    const saveHintEl      = document.getElementById('booth-save-hint');
 
     let selectedLayout = 'strip3';
     let selectedTimer = 5;
@@ -2818,12 +2846,24 @@
     let capturedShots = []; // array of drawable elements (canvas or Image)
     let charmImgPromise = null;
 
+    // Result state used by the download/share handler below.
+    let currentBlob = null;
+    let currentBlobUrl = null;
+    let currentFilename = 'aubrey-debut-photobooth.png';
+
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     function goToStep(step){
       ['setup','camera','result'].forEach(s => {
         document.getElementById(`booth-step-${s}`).hidden = (s !== step);
       });
+    }
+
+    function revokeCurrentBlobUrl(){
+      if(currentBlobUrl){
+        URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = null;
+      }
     }
 
     // ---- Step 1: layout + timer selection ----
@@ -2984,6 +3024,8 @@
 
     retakeBtn.addEventListener('click', () => {
       capturedShots = [];
+      revokeCurrentBlobUrl();
+      currentBlob = null;
       goToStep('setup');
     });
 
@@ -3012,6 +3054,13 @@
       ctx.clip();
       ctx.drawImage(img, dx, dy, dw, dh);
       ctx.restore();
+    }
+
+    // Wraps canvas.toBlob in a Promise so renderResult can await it.
+    function canvasToBlob(canvas){
+      return new Promise(resolve => {
+        canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
+      });
     }
 
     async function renderResult(){
@@ -3092,11 +3141,74 @@
         ctx.stroke();
       }
 
-      const dataUrl = stripCanvas.toDataURL('image/png');
-      downloadBtn.href = dataUrl;
+      // ---- Build the shareable/downloadable file from a real Blob ----
+      // (canvas.toDataURL + <a download> is unreliable on iOS Safari;
+      // a Blob + Object URL, with a Web Share fallback below, works
+      // consistently across desktop and mobile.)
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadBtn.setAttribute('download', `aubrey-debut-${cfg.label.toLowerCase().replace(/\s+/g, '-')}-${stamp}.png`);
+      currentFilename = `aubrey-debut-${cfg.label.toLowerCase().replace(/\s+/g, '-')}-${stamp}.png`;
+
+      const blob = await canvasToBlob(stripCanvas);
+      revokeCurrentBlobUrl();
+      currentBlob = blob;
+
+      if(blob){
+        currentBlobUrl = URL.createObjectURL(blob);
+        downloadBtn.href = currentBlobUrl;
+      } else {
+        // Extremely old browsers without canvas.toBlob support — fall
+        // back to a data URL so the link still does something useful.
+        currentBlobUrl = null;
+        downloadBtn.href = stripCanvas.toDataURL('image/png');
+      }
+      downloadBtn.setAttribute('download', currentFilename);
     }
+
+    // ---- Save / share handler: Web Share first, blob download fallback ----
+    downloadBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if(!currentBlob){
+        return; // nothing rendered yet
+      }
+
+      const file = (typeof File !== 'undefined')
+        ? new File([currentBlob], currentFilename, { type: 'image/png' })
+        : null;
+
+      // Prefer the native share sheet when the platform supports sharing
+      // files — this is what lets iOS/Android guests save straight to
+      // their Photos app in one tap.
+      if(file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+        try {
+          await navigator.share({
+            files: [file],
+            title: DEBUT.fullName + "'s Debut Photobooth",
+            text: 'A keepsake from ' + DEBUT.fullName + "'s 18th birthday celebration."
+          });
+          return;
+        } catch(err){
+          if(err && err.name === 'AbortError'){
+            // Guest cancelled the share sheet — respect that, don't
+            // also force a download on top of it.
+            return;
+          }
+          // Any other share failure: fall through to a direct download.
+        }
+      }
+
+      // Fallback for browsers without file-sharing support (most
+      // desktop browsers): trigger a normal blob-URL download.
+      if(currentBlobUrl){
+        const a = document.createElement('a');
+        a.href = currentBlobUrl;
+        a.download = currentFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else if(saveHintEl){
+        saveHintEl.textContent = "Press and hold the image above and choose \u201cSave Image\u201d to keep your photo.";
+      }
+    });
   })();
 
   const EMAILJS_CONFIG = {
